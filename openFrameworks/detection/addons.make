@@ -1,0 +1,4 @@
+ofxMSACore
+ofxMSAObjCPointer
+ofxMSAPhysics
+#ofxReact
