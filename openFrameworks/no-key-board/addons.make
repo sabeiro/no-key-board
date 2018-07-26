@@ -1,0 +1,5 @@
+ofxCv
+ofxOpenCv
+ofxMidi
+ofxOsc
+

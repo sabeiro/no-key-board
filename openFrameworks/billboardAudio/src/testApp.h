@@ -1,7 +1,7 @@
 #pragma once
 #include "ofMain.h"
 #include "ofVbo.h"
-#include "ofxReact.h"
+//#include "ofxReact.h"
 //#include "ofxAudioFeatures.h" //add timeline include
 
 #define NUM_BILLBOARDS 5000
