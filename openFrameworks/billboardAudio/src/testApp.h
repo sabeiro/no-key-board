@@ -23,7 +23,7 @@ class testApp : public ofBaseApp {
   void update();
   void draw();
 
-  ofxReact React();
+  //  ofxReact React();
 
 		
   void keyPressed(int key);

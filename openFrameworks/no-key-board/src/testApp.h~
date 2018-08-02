@@ -28,16 +28,19 @@ class keyParam{
   string reportString();
   float vNote[NNoteTot];
   bool IsSine;
+  bool IsTestSine;
   bool IsHarm;
   bool IsSquare;
   bool IsQuant;
   bool IsContour;
   bool IsAudio;
+  bool IsVideo;
   bool IsMidi;
   bool IsInvert;
   bool IsOsc;
   bool IsWhite;
   bool IsEnvelope;
+  bool IsFollowing;
   bool IsMirror;
   bool IsPortamento;
   int NReg;
@@ -145,6 +148,7 @@ class testApp : public ofBaseApp{
   void clearSample(int bufferSize);
   void addWhite(int bufferSize);
   void addSine(int bufferSize);
+  void addTestSine(int bufferSize);
   void addSquare(int bufferSize);
   void addHarm(int bufferSize);
 
@@ -152,11 +156,13 @@ class testApp : public ofBaseApp{
   void getCenterPix(char unsigned *ImPix,int vw,int vh);
   void getCenter();
   void findFreq(void);
+  void followSignal(int buffersize);
   void playMidi(void);
   void fadeMidi(void);
 
   vector <float> lAudio;
   vector <float> rAudio;
+  vector <float> pitchDect;
   vector <unsigned char> ImPix;
   //ofxColorImage ImBinary;
   ofxCvGrayscaleImage ImBinary;

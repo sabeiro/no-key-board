@@ -39,7 +39,7 @@ void testApp::setup() {
   texture.loadImage("dot.png");
   ofEnableAlphaBlending();
 
-  my_sound.loadSound("Zoe.wav");
+  //  my_sound.loadSound("Zoe.wav");
   IfSong = 0;
   // the fft needs to be smoothed out, so we create an array of floats
   // for that purpose:

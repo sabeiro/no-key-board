@@ -20,7 +20,7 @@ keyParam::keyParam(){
   IsInvert = false;
   NCorrW = 20;//h contour correlation
   NCorrH = 20;//v contour correlation
-  ColTh = 200;//color threshold
+  ColInit = 200;//color threshold
   NoteMin = 35;//minimum note
   NNote = 24;//note range
   AudioGain = .004;
@@ -31,7 +31,7 @@ keyParam::keyParam(){
   ContMaxA = 20.;
   NReg = 0;
   FrameRate = 25;
-  midiProg = 0;
+  midiProg = 1;
   midiChannel = 1;
   midiPort = 1;
   PitchDist = 10;
@@ -51,6 +51,15 @@ keyParam::keyParam(){
     timbro[t] = vTimbro[t];
   }
   calcDependencies();
+  parameters.setName("spot shape");
+  parameters.add(SliceD.set("up",40,1,120));
+  parameters.add(SliceU.set("down",140,120,240));  
+  parameters.add(NoteMin.set("note min",12,0,24));
+  parameters.add(NNote.set("note range",12,12,36));  
+  parameters.add(check.set("check",false));
+  parameters.add(ContMaxA.set("r max",10.,10.,60.));  
+  parameters.add(ContMinA.set("r min",2.,1.,20.));
+  parameters.add(colTh.set("color",ofColor(127),ofColor(0,0),ofColor(255)));
 }
 void keyParam::calcDependencies(){
   dt = 1./(float)FrameRate*1000.;
@@ -73,7 +82,7 @@ void keyParam::readConf(char *FName){
   for(int k=0;!(fgets(cLine,256,File2Open)==NULL);k++){
     if(cLine[0] == '#') continue;
     if(1 == sscanf(cLine,"ColThreshold %f",buff) )
-      ColTh = (int)*buff;
+      ColInit = (int)*buff;
     if(1 == sscanf(cLine,"midiPort %f",buff) )
 	midiPort = (int)*buff;
     if(1 == sscanf(cLine,"midiProg %f",buff) )

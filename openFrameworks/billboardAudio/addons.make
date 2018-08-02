@@ -1,1 +1,2 @@
-ofxReact
+#ofxReact
+ofxReactionDiffusion

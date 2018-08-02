@@ -13,6 +13,8 @@
 #include "ofxOpenCv.h"
 #include "ofxMidi.h"
 #include "ofxOsc.h"
+#include "ofxOscParameterSync.h"
+#include "ofxGui.h"
 #include <iostream>
 #include <fstream>
 
@@ -44,18 +46,12 @@ class keyParam{
   bool IsMirror;
   bool IsPortamento;
   int NReg;
-  int NCorrW;
-  int NCorrH;
   int ColTh;
-  int NoteMin;
-  int NNote;
   int FrameRate;
   int bufferSize;
   int sampleRate;
   int vw;
   int vh;
-  int SliceD;
-  int SliceU;
   int midiChannel;
   int midiPort;
   unsigned int midiProg;
@@ -65,11 +61,22 @@ class keyParam{
   float SynthVol[4];
   float AudioGain;
   float MidiGain;
-  float SliceFactD;
   float SliceFactU;
-  float ContMinA;
-  float ContMaxA;
+  float SliceFactD;
+  float ColInit;
   float dt;
+  ofParameter<float> size;
+  ofParameter<int> NCorrW;
+  ofParameter<int> NCorrH;
+  ofParameter<int> SliceD;
+  ofParameter<int> SliceU;
+  ofParameter<int> NoteMin;
+  ofParameter<int> NNote;
+  ofParameter<bool> check;
+  ofParameter<float> ContMinA;
+  ofParameter<float> ContMaxA;
+  ofParameterGroup parameters;
+  ofParameter<ofColor> colTh;
 };
 
 class keyFinger{
@@ -89,6 +96,7 @@ class keyFinger{
   int NoteCounter;
   int midiVel;
   float volume;
+  float pitch;
   float control;
   float NoteTime;
   float phase;
@@ -118,9 +126,9 @@ class testApp : public ofBaseApp{
   void dragEvent(ofDragInfo dragInfo);
   void gotMessage(ofMessage msg);		
 
-  ofVideoGrabber video;
-  ofxCv::ContourFinder contourFinder;
-	
+
+  ofxOscParameterSync sync;
+
   //the view window is defined by 3 corners
   ofVec3f windowTopLeft;
   ofVec3f windowBottomLeft;
@@ -135,28 +143,31 @@ class testApp : public ofBaseApp{
   float viewerDistance;
 	
   //deque<ofPoint> headPositionHistory;
-  void audioOut(float * input, int bufferSize, int nChannels);
-  
+  //-------------------audio------------------------
   ofSoundStream soundStream;
-
   float 	pan;
   int		sampleRate;
-
+  void audioOut(float * input, int bufferSize, int nChannels);
   void envelope(int *NotePos,cv::Point2f *center,float *area,int NPhOld);
   void notEnvelope(cv::Point2f *center,float *area);
-  void displayFinger();
   void clearSample(int bufferSize);
   void addWhite(int bufferSize);
   void addSine(int bufferSize);
   void addTestSine(int bufferSize);
   void addSquare(int bufferSize);
   void addHarm(int bufferSize);
-
+  void followSignal(int buffersize);
+  //-------------------draw--------------------------
+  void displayFinger();
+  ofxFloatSlider radius;
+  ofxPanel gui;
+  //----------------------cv--------------------------
+  ofVideoGrabber video;
+  ofxCv::ContourFinder contourFinder;
   void getCenterCont(char unsigned *ImPix,int vw,int vh);
   void getCenterPix(char unsigned *ImPix,int vw,int vh);
   void getCenter();
   void findFreq(void);
-  void followSignal(int buffersize);
   void playMidi(void);
   void fadeMidi(void);
 
@@ -166,7 +177,6 @@ class testApp : public ofBaseApp{
   vector <unsigned char> ImPix;
   //ofxColorImage ImBinary;
   ofxCvGrayscaleImage ImBinary;
-		
   //------------------- for the simple sine wave synthesis
   keyParam Par;
   float mouseFrequency;

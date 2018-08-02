@@ -7,33 +7,44 @@ void testApp::setup(){
   ofSetVerticalSync(true);
   Par.readConf("data/pianoConf.txt");
   cout << Par.reportString();
-  //midi
+  //------------------midi------------------------
   midiOut.listPorts(); // via instance
   //midiOut.openPort("IAC Driver Pure Data In");	// by name
   //midiOut.openVirtualPort("ofxMidiOut");		// open a virtual port
-  //camera
+  //-----------------camera----------------------
   video.listDevices();
   video.setDeviceID(2);
   video.initGrabber(Par.vw,Par.vh);
   contourFinder.setMinAreaRadius(Par.ContMinA);
   contourFinder.setMaxAreaRadius(Par.ContMaxA);
-  //audio
+  contourFinder.setThreshold(127);
+  //-----------------audio-----------------------
   lAudio.assign(Par.bufferSize, 0.0);
   pitchDect.assign(Par.bufferSize, 0.0);
   rAudio.assign(Par.bufferSize, 0.0);
   ImPix.assign(Par.vw*Par.vh,0);
-  ImBinary.allocate(Par.vw,Par.SliceU-Par.SliceD);
+  ImBinary.allocate(Par.vw,Par.vh);
+  //-----------------audio------------------------
   //soundStream.listDevices();
   //if you want to set the device id to be different than the default
   //soundStream.setDeviceID(1); 	//note some devices are input only and some are output only 
   soundStream.setup(this, 2, 0, Par.sampleRate, Par.bufferSize, 4);
   soundStream.stop();
   for(int p=0;p<NPhTot;p++){Fing[p].setId(p);}
+  //----------------gui-------------------------
+  gui.setup(Par.parameters);
+  gui.setPosition(1000,400);
+  sync.setup((ofParameterGroup&)gui.getParameter(),6667,"localhost",6666);
+  ofSetVerticalSync(true);
 }
 
 //--------------------------------------------------------------
 void testApp::update(){
   video.update();
+  sync.update();
+  contourFinder.setMinAreaRadius(Par.ContMinA);
+  contourFinder.setMaxAreaRadius(Par.ContMaxA);
+ 
 }
 void testApp::envelope(int *NotePos,cv::Point2f *center,float *area,int NPhOld){
   if(NPhase == NPhOld){
@@ -69,25 +80,25 @@ void testApp::notEnvelope(cv::Point2f *center,float *area){
 }
 void testApp::getCenter(){
   if (!video.isFrameNew()) return;
-  contourFinder.setThreshold(Par.ColTh);
-  unsigned char *pixels = video.getPixels();
+  // unsigned char *pixels = video.getPixels();
+  ofPixels pixels = video.getPixels();
   //ImPix.assign(Par.vw*Par.vh,0);
   ImBinary.set(1.0);
+  ofColor colT = Par.colTh.get();
+  int h1 = 0;
   for(int w=0;w<Par.vw;w++){
     for(int h=Par.SliceD;h<Par.SliceU;h++){
       if(Par.IsInvert){
-	if(pixels[(h*Par.vw+w)*3  ] < Par.ColTh){
-	  int h1 = h - Par.SliceD;
-	  ImBinary.getPixels()[h1*Par.vw+w] = 255;
-	  //ImPix[h1*Par.vw+w] = 255;
-	}
+	h1 = (h*Par.vw+w);
+	if(pixels[h1*3  ]<colT.r){ImBinary.getPixels()[h1] = 255;}
+	if(pixels[h1*3+1]<colT.g){ImBinary.getPixels()[h1] = 255;}
+	if(pixels[h1*3+2]<colT.b){ImBinary.getPixels()[h1] = 255;}
       }
       else{
-	if(pixels[(h*Par.vw+w)*3  ] > Par.ColTh){
-	  int h1 = h - Par.SliceD;
-	  ImBinary.getPixels()[h1*Par.vw+w] = 255;
-	  //ImPix[h1*Par.vw+w] = 255;
-	}
+	h1 = (h*Par.vw+w);
+	if(pixels[h1*3  ]>colT.r){ImBinary.getPixels()[h1] = 255;}
+	if(pixels[h1*3+1]>colT.g){ImBinary.getPixels()[h1] = 255;}
+	if(pixels[h1*3+2]>colT.b){ImBinary.getPixels()[h1] = 255;}
       }
     }
   }
@@ -125,7 +136,8 @@ void testApp::playMidi(){
     int vx = Fing[p].NoteQuant;
     int note = vx + Par.NoteMin;
     if(NoteStat[vx] == 0){
-      midiOut.sendNoteOn(Par.midiChannel, note, Fing[p].midiVel);
+      //midiOut.sendNoteOn(Par.midiChannel, note, Fing[p].midiVel);
+      midiOut.sendNoteOn(Fing[p].id+1, note, Fing[p].midiVel);
       NoteStat[vx] = 1;
     }
     if(!Par.IsQuant){
@@ -178,10 +190,12 @@ void testApp::draw(){
   ofBackgroundGradient(ofColor(50), ofColor(0));
   if(Par.IsVideo){
     findFreq();
-    video.draw(0, 0);
-    int width = ofGetWidth();
-    ImBinary.draw(width/2-Par.vw/2,0);
+    video.draw(0,0);
+    ImBinary.draw(ofGetWidth()/2-Par.vw/2,0);
+    ofPushMatrix();
+    //ofTranslate(0,Par.SliceD,0);
     contourFinder.draw();
+    ofPopMatrix();
   }
   stringstream text;
   string reportString = Par.reportString();
@@ -192,86 +206,96 @@ void testApp::draw(){
   }
   ofDrawBitmapString(reportString, 32, 579);
   ofNoFill();
+  // control
+  gui.draw();
+  ofPushMatrix();
+  ofTranslate(1100, 100, 0);
+  ofPushStyle();
+  ofSetColor(Par.colTh);
+  ofDrawCircle(0,0,Par.ContMinA);
+  ofDrawCircle(0,0,Par.ContMaxA);
+  ofPopStyle();
+  ofPopMatrix();
   if(Par.IsAudio){
     // draw the left channel:
-  ofPushStyle();
-  ofPushMatrix();
-  ofTranslate(32, 150, 0);
-  ofSetColor(225);
-  ofDrawBitmapString("Left Channel", 4, 18);
-  ofSetLineWidth(1);	
-  ofRect(0, 0, 900, 200);
-  ofSetLineWidth(3);
-  ofSetColor(245, 58, 135);
-  ofBeginShape();
-  for (unsigned int i = 0; i < lAudio.size(); i++){
-    float x =  ofMap(i, 0, lAudio.size(), 0, 900, true);
-    ofVertex(x, 100 -lAudio[i]*180.0f);
-  }
-  ofEndShape(false);
-  ofSetColor(245, 225, 135);
-  if(Par.IsFollowing){
+    ofPushStyle();
+    ofPushMatrix();
+    ofTranslate(32, 150, 0);
+    ofSetColor(225);
+    ofDrawBitmapString("Left Channel", 4, 18);
+    ofSetLineWidth(1);	
+    ofRect(0, 0, 900, 200);
+    ofSetLineWidth(3);
+    ofSetColor(245, 58, 135);
     ofBeginShape();
-    for (unsigned int i = 0; i < pitchDect.size(); i++){
-      float x =  ofMap(i, 0, pitchDect.size(), 0, 900, true);
-      ofVertex(x, 100 - pitchDect[i]*180.0f);
+    for (unsigned int i = 0; i < lAudio.size(); i++){
+      float x =  ofMap(i, 0, lAudio.size(), 0, 900, true);
+      ofVertex(x, 100 -lAudio[i]*180.0f);
     }
-  }
-  ofEndShape(false);
-  ofPopMatrix();
-  ofPopStyle();
-  // draw the right channel:
-  ofPushStyle();
-  ofPushMatrix();
-  ofTranslate(32, 350, 0);
-  ofSetColor(225);
-  ofDrawBitmapString("Right Channel", 4, 18);
-  ofSetLineWidth(1);	
-  ofRect(0, 0, 900, 200);
-  ofSetLineWidth(3);
-  ofSetColor(245, 58, 135);
-  ofBeginShape();
-  for (unsigned int i = 0; i < rAudio.size(); i++){
-    float x =  ofMap(i, 0, rAudio.size(), 0, 900, true);
-    ofVertex(x, 100 -rAudio[i]*180.0f);
-  }
-  ofEndShape(false);
-  ofSetColor(245, 58, 135);
-  ofBeginShape();
-  for (unsigned int i = 0; i < rAudio.size(); i++){
-    float x =  ofMap(i, 0, rAudio.size(), 0, 900, true);
-    ofVertex(x, 100 -rAudio[i]*180.0f);
-  }
-  ofEndShape(false);
-  ofPopMatrix();
-  ofPopStyle();
-  // draw the envelope:
-  ofPushStyle();
-  ofPushMatrix();
-  ofTranslate(950, 150, 0);
-  ofSetColor(225);
-  string label = "Envelope " + ofToString(Par.SynthTime[0]) + " " + ofToString(Par.SynthTime[1]) + " " + ofToString(Par.SynthTime[3]) + " ms\n" ;
-  ofDrawBitmapString(label, 4, 18);
-  ofSetLineWidth(1); 
-  ofRect(0, 0, 200, 200);
-  ofSetColor(245, 58, 135);
-  ofSetLineWidth(3);
-  ofBeginShape();
-  float L = 200./(Par.SynthTime[0] + Par.SynthTime[1] + 2.*Par.SynthTime[2] + Par.SynthTime[3]);
-  ofVertex(0,200.);
-  float xEnv = Par.SynthTime[0]*L;
-  ofVertex(xEnv,200.-Par.SynthVol[0]*200.);
-  xEnv += Par.SynthTime[1]*L;
-  ofVertex(xEnv,200.-Par.SynthVol[1]*200.);
-  xEnv += Par.SynthTime[2]*L;
-  ofVertex(xEnv,200.-Par.SynthVol[2]*200.);
-  xEnv += Par.SynthTime[2]*L;
-  ofVertex(xEnv,200.-Par.SynthVol[2]*200.);
-  xEnv += Par.SynthTime[3]*L;
-  ofVertex(xEnv,200.-Par.SynthVol[3]*200.);
-  ofEndShape(false);
-  ofPopMatrix();
-  ofPopStyle();
+    ofEndShape(false);
+    ofSetColor(245, 225, 135);
+    if(Par.IsFollowing){
+      ofBeginShape();
+      for (unsigned int i = 0; i < pitchDect.size(); i++){
+	float x =  ofMap(i, 0, pitchDect.size(), 0, 900, true);
+	ofVertex(x, 100 - pitchDect[i]*180.0f);
+      }
+    }
+    ofEndShape(false);
+    ofPopMatrix();
+    ofPopStyle();
+    // draw the right channel:
+    ofPushStyle();
+    ofPushMatrix();
+    ofTranslate(32, 350, 0);
+    ofSetColor(225);
+    ofDrawBitmapString("Right Channel", 4, 18);
+    ofSetLineWidth(1);	
+    ofRect(0, 0, 900, 200);
+    ofSetLineWidth(3);
+    ofSetColor(245, 58, 135);
+    ofBeginShape();
+    for (unsigned int i = 0; i < rAudio.size(); i++){
+      float x =  ofMap(i, 0, rAudio.size(), 0, 900, true);
+      ofVertex(x, 100 -rAudio[i]*180.0f);
+    }
+    ofEndShape(false);
+    ofSetColor(245, 58, 135);
+    ofBeginShape();
+    for (unsigned int i = 0; i < rAudio.size(); i++){
+      float x =  ofMap(i, 0, rAudio.size(), 0, 900, true);
+      ofVertex(x, 100 -rAudio[i]*180.0f);
+    }
+    ofEndShape(false);
+    ofPopMatrix();
+    ofPopStyle();
+    // draw the envelope:
+    ofPushStyle();
+    ofPushMatrix();
+    ofTranslate(950, 150, 0);
+    ofSetColor(225);
+    string label = "Envelope " + ofToString(Par.SynthTime[0]) + " " + ofToString(Par.SynthTime[1]) + " " + ofToString(Par.SynthTime[3]) + " ms\n" ;
+    ofDrawBitmapString(label, 4, 18);
+    ofSetLineWidth(1); 
+    ofRect(0, 0, 200, 200);
+    ofSetColor(245, 58, 135);
+    ofSetLineWidth(3);
+    ofBeginShape();
+    float L = 200./(Par.SynthTime[0] + Par.SynthTime[1] + 2.*Par.SynthTime[2] + Par.SynthTime[3]);
+    ofVertex(0,200.);
+    float xEnv = Par.SynthTime[0]*L;
+    ofVertex(xEnv,200.-Par.SynthVol[0]*200.);
+    xEnv += Par.SynthTime[1]*L;
+    ofVertex(xEnv,200.-Par.SynthVol[1]*200.);
+    xEnv += Par.SynthTime[2]*L;
+    ofVertex(xEnv,200.-Par.SynthVol[2]*200.);
+    xEnv += Par.SynthTime[2]*L;
+    ofVertex(xEnv,200.-Par.SynthVol[2]*200.);
+    xEnv += Par.SynthTime[3]*L;
+    ofVertex(xEnv,200.-Par.SynthVol[3]*200.);
+    ofEndShape(false);
+    ofPopMatrix();
+    ofPopStyle();
   }//Audio
 }
 //--------------------------------------------------------------
@@ -316,7 +340,7 @@ void testApp::keyPressed(int key){
   if( key == 'M' ){
     Par.IsMirror = !Par.IsMirror;
   }
-  if( key == 'p' ){
+  if( key == ' '){
     Par.IsAudio = !Par.IsAudio;
     if(Par.IsAudio){
       soundStream.start();
@@ -536,9 +560,9 @@ void testApp::followSignal(int buffersize){
       else{//slope not steep enough
 	noMatch++;//increment no match counter
 	if (noMatch>9){
-	    index = 0;
-	    slopeMax = 0.;
-	    noMatch = 0;
+	  index = 0;
+	  slopeMax = 0.;
+	  noMatch = 0;
 	}
       }
       pitchDect[i] *= quant;;

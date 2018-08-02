@@ -17,7 +17,7 @@ keyFinger::keyFinger(){
 void keyFinger::setId(int i){
   id = i;
 }
-void keyFinger::assignNote(keyParam Par,  cv::Point2f Cent,float area){
+void keyFinger::assignNote(keyParam Par,cv::Point2f Cent,float area){
   OldNoteQuant = NoteQuant;
   float Pitch = 0.;
   float CentNorm = 1./((float)Par.vw);
@@ -31,8 +31,8 @@ void keyFinger::assignNote(keyParam Par,  cv::Point2f Cent,float area){
   midiVel = midiVel < 90 ? midiVel : 90;
   if(Par.IsQuant) Pitch = Par.vNote[vx];
   else{
-    if(Par.IsMirror) Pitch = 2000.*(Par.vw-Cent.x)*CentNorm;
-    else Pitch = 2000.*Cent.x*CentNorm;
+    if(Par.IsMirror) Pitch = 20.*Par.NoteMin*(Par.vw-Cent.x)*CentNorm;
+    else Pitch = 20.*Par.NoteMin*Cent.x*CentNorm;
   }
   phaseAdderTarget = (Pitch / (float) Par.sampleRate) * TWO_PI;
   control = Cent.y/(float)(Par.SliceU-Par.SliceD);
@@ -91,3 +91,7 @@ string keyFinger::reportString(keyParam Par){
   repStr += " f " + ofToString(frequency, 2) + " v " + ofToString(volume, 2) + " s " + ofToString(State, 0) + " ";
   return repStr;
 }
+
+//beagle bone (bela)
+//servando barreiro pure data
+//pure data vanilla

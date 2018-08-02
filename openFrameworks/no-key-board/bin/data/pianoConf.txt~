@@ -1,16 +1,17 @@
 #config file for no-key-board settings
-ColThreshold 228            #threshold for the red color
+ColThreshold 240            #threshold for the red color
 midiPort 1
 midiProg 1
 NoteMin 12
 NNote 24
-CorrLength 20 20            #correlation length for pixel size
+CorrLength 40 40            #correlation length for pixel size
 MidiGain 4              #ratio between volume and area
 AudioGain .002
 PitchDist 10
-SliceFact 0.50 .9          #slice of video height to use
+SliceFact 0.20 .99          #slice of video height to use
 ContArea 2 10              #radio of the min and max area to consider
 SynthTime 300 100 100 200  #ms
 SynthVol 1. 1. .8 .0  #volume
+FrameRate 60;
 #Timbro1 .9 .31 .35 .68 .04 .31 .32 .41 .18 .26 .20 .20 .25 .13 .10  .08 # volume of the harmonics
 
