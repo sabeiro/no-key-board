@@ -1,5 +1,7 @@
-# Ignore all
-*
+node_modules/
+bin/
+obj/
+
 
 # Unignore all with extensions
 !*.*
