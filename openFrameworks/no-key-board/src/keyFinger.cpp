@@ -78,7 +78,8 @@ int keyFinger::findHistory(int *NewPos,int NPos,keyParam Par){
 }
 void keyFinger::sendOsc(){
   ofxOscMessage m;
-  m.setAddress("/finger");
+  std::string folder = "finger";
+  m.setAddress(folder + std::to_string(id));
   m.addIntArg(id);
   m.addIntArg(NoteQuant);
   m.addFloatArg(frequency);
