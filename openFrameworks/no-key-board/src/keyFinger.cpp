@@ -92,7 +92,3 @@ string keyFinger::reportString(keyParam Par){
   repStr += " f " + ofToString(frequency, 2) + " v " + ofToString(volume, 2) + " s " + ofToString(State, 0) + " ";
   return repStr;
 }
-
-//beagle bone (bela)
-//servando barreiro pure data
-//pure data vanilla
